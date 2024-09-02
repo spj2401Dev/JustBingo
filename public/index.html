@@ -4,58 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Bingo</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-        }
-        .bingo-container {
-            text-align: center;
-        }
-        .bingo-title {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            margin-bottom: 20px;
-        }
-        .bingo-letter {
-            font-size: 2em;
-            font-weight: bold;
-            color: #343a40;
-        }
-        .bingo-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 110px);
-            grid-template-rows: repeat(5, 110px);
-            gap: 5px;
-        }
-        .bingo-cell {
-            border: 2px solid #343a40;
-            border-radius: 3px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            background-color: #ffffff;
-            color: #343a40;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 5px;
-            box-sizing: border-box;
-            word-wrap: break-word;
-            font-size: 14px;
-            line-break: loose;
-        }
-        .marked {
-            background-color: #343a40;
-            color: #ffffff;
-        }
-    </style>
+    <link rel="stylesheet" href="/style.css">
+    <script src="/script.js" defer></script>
 </head>
+
 <body>
     <div class="bingo-container">
         <div class="bingo-title">
@@ -67,33 +19,5 @@
         </div>
         <div class="bingo-grid" id="bingoGrid"></div>
     </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Fetch data from the API
-            fetch('/api/words')
-                .then(response => response.json())
-                .then(data => {
-                    // Limit to 25 items in case more are returned
-                    const words = data.slice(0, 25);
-                    
-                    const grid = document.getElementById('bingoGrid');
-                    
-                    // Create and append the bingo cells
-                    words.forEach(word => {
-                        const cell = document.createElement('div');
-                        cell.classList.add('bingo-cell');
-                        cell.textContent = word;
-                        cell.addEventListener('click', function() {
-                            this.classList.toggle('marked');
-                        });
-                        grid.appendChild(cell);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error fetching the words:', error);
-                });
-        });
-    </script>
 </body>
 </html>
