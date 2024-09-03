@@ -23,7 +23,10 @@ const words = [
     "Oli/Frank rufen Johannes direkt auf",
     "Hört man mich jetzt?",
     "Lucas/Stefan sind schatten",
-    "Morris ist ein blob"
+    "Morris ist ein blob",
+    "Flachwitz von Johannes",
+    "Heute x Morgen x",
+    "Oben Links ist... (von Oli)"
 ]
 
 module.exports = words;
