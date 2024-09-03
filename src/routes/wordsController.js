@@ -6,7 +6,7 @@ let file = editJsonFile(`${__dirname}/../../words.json`);
 
 router.get('/words', (req, res) => {
     var words = file.get('words') || [];
-    res.json(words.sort(() => Math.random() - 0.5));
+    res.json(words.sort(() => Math.random() - 0.5).slice(0, 25));
 });
 
 module.exports = router;
