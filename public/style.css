@@ -47,3 +47,10 @@ body {
     background-color: #343a40;
     color: #ffffff;
 }
+
+.disabled {
+    background-color: rgb(183, 183, 183) !important;
+    color: black !important;
+    cursor: not-allowed !important;
+    border-color: rgb(183, 183, 183) !important;
+}

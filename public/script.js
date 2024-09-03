@@ -19,6 +19,12 @@ document.addEventListener("DOMContentLoaded", () => {
         cell.addEventListener('click', () => {
             cell.classList.toggle('marked');
         });
+
+        cell.addEventListener('contextmenu', (event) => {
+            event.preventDefault();
+            cell.classList.toggle('disabled');
+            cell.classList.remove('marked');
+        });
         return cell;
     };
 
