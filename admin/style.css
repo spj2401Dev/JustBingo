@@ -4,12 +4,12 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: 'IBMPlexSans', sans-serif;
     background-color: #f8f9fa;
 }
 
 .container {
-    max-width: 450px;
+    max-width: 500px;
     width: 100%;
     text-align: center;
     max-height: 100vh;
@@ -21,6 +21,8 @@ body {
 
 h1 {
     margin-bottom: 20px;
+    font-family: 'Merriweather', sans-serif;
+    font-size: 3em;
 }
 
 .words-container {
@@ -37,8 +39,10 @@ h1 {
     flex: 1;
     padding: 8px;
     border: 1px solid #ced4da;
-    border-radius: 4px;
+    border-right: 0px;
+    border-radius: 4px 0px 0px 4px;
     font-size: 14px;
+    font-family: 'IBMPlexSans', sans-serif;
 }
 
 .remove-button {
@@ -68,4 +72,25 @@ h1 {
 
 .action-button:hover {
     background-color: #0056b3;
+}
+
+.word-type {
+    flex: 1;
+    max-width: 70px;
+    padding: 8px;
+    border: 1px solid #ced4da;
+    border-radius: 0px 4px 4px 0px;
+    font-size: 14px;
+    font-family: 'IBMPlexSans', sans-serif;
+}
+
+.time-field {
+    flex: 1;
+    padding: 8px;
+    max-width: 50px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    margin-right: 5px;
+    font-size: 14px;
+    font-family: 'IBMPlexSans', sans-serif;
 }

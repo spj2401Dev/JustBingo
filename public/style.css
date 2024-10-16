@@ -4,7 +4,8 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: 'IBMPlexSans', sans-serif;
+    font-weight: lighter;
     background-color: #f8f9fa;
 }
 .bingo-container {
@@ -16,9 +17,11 @@ body {
     margin-bottom: 20px;
 }
 .bingo-letter {
-    font-size: 2em;
+    font-size: 3em;
     font-weight: bold;
     color: #343a40;
+    font-family: 'Merriweather', sans-serif;
+    font-weight: 900;
 }
 .bingo-grid {
     display: grid;
@@ -53,4 +56,17 @@ body {
     color: black !important;
     cursor: not-allowed !important;
     border-color: rgb(183, 183, 183) !important;
+}
+
+.credits {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    padding: 10px;
+    font-size: 14px;
+}
+
+.github {
+    color: #22522d;
+    text-decoration: none;
 }
