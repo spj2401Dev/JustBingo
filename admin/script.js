@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (words.length === 0) {
                 displayNoWordsMessage();
             } else {
-                words.forEach(addWordField);
+                words.forEach(wordObj => addWordField(wordObj.word, wordObj.type, wordObj.time));
             }
         } catch (error) {
             handleFetchError(error);
@@ -42,15 +42,43 @@ document.addEventListener('DOMContentLoaded', () => {
         wordsContainer.innerHTML = '<p>Error loading words. Please try again later.</p>';
     }
 
-    // Add a new word input field with a remove button
-    function addWordField(value = '') {
+    function addWordField(value = '', type = 'Field', time = '') {
         const container = document.createElement('div');
         container.className = 'word-field-container';
+
+        const timeInput = document.createElement('input');
+        timeInput.type = 'number';
+        timeInput.placeholder = 'Sec';
+        timeInput.className = 'time-field';
+        timeInput.value = time;
 
         const inputField = document.createElement('input');
         inputField.type = 'text';
         inputField.value = value;
         inputField.className = 'word-field';
+
+        const typeDropdown = document.createElement('select');
+        const options = ['Field', 'Free', 'Timer'];
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option;
+            opt.textContent = option;
+            if (option === type) opt.selected = true;
+            typeDropdown.appendChild(opt);
+        });
+
+        typeDropdown.className = 'word-type';
+
+        typeDropdown.addEventListener('change', () => {
+            if (typeDropdown.value === 'Timer') {
+                timeInput.style.display = 'block';
+            } else {
+                timeInput.style.display = 'none';
+            }
+        });
+
+        // Set initial visibility based on type
+        timeInput.style.display = type === 'Timer' ? 'block' : 'none';
 
         const removeButton = document.createElement('button');
         removeButton.textContent = 'X';
@@ -59,7 +87,9 @@ document.addEventListener('DOMContentLoaded', () => {
             container.remove();
         });
 
+        container.appendChild(timeInput);
         container.appendChild(inputField);
+        container.appendChild(typeDropdown);
         container.appendChild(removeButton);
         wordsContainer.appendChild(container);
     }
@@ -67,9 +97,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add a new word field when the "Add Word" button is clicked
     addWordButton.addEventListener('click', () => addWordField());
 
-    // Save words to the server
     saveButton.addEventListener('click', async () => {
-        const updatedWords = Array.from(document.querySelectorAll('.word-field')).map(input => input.value);
+        const updatedWords = Array.from(document.querySelectorAll('.word-field-container')).map(container => {
+            return {
+                word: container.querySelector('.word-field').value,
+                type: container.querySelector('.word-type').value,
+                time: container.querySelector('.time-field').style.display === 'block' ? container.querySelector('.time-field').value : null // Get time if it's visible
+            };
+        });
 
         try {
             await saveWords(updatedWords);
@@ -108,7 +143,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Export words as a JSON file
     exportButton.addEventListener('click', () => {
-        const words = Array.from(document.querySelectorAll('.word-field')).map(input => input.value);
+        const words = Array.from(document.querySelectorAll('.word-field-container')).map(container => {
+            return {
+                word: container.querySelector('.word-field').value,
+                type: container.querySelector('.word-type').value,
+                time: container.querySelector('.time-field').style.display === 'block' ? container.querySelector('.time-field').value : null
+            };
+        });
+
         const blob = new Blob([JSON.stringify({ words }, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -131,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (isValidWordData(json)) {
                     wordsContainer.innerHTML = ''; // Clear current words
-                    json.words.forEach(addWordField); // Add imported words
+                    json.words.forEach(wordObj => addWordField(wordObj.word, wordObj.type, wordObj.time)); // Add imported words
                 } else {
                     alert('Invalid JSON format. Please provide a valid words file.');
                 }
@@ -144,6 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Validate imported JSON structure
     function isValidWordData(data) {
-        return Array.isArray(data.words) && data.words.every(word => typeof word === 'string');
+        return Array.isArray(data.words) && data.words.every(word => typeof word === 'object' && typeof word.word === 'string' && typeof word.type === 'string' && (typeof word.time === 'string' || word.time === null));
     }
 });
