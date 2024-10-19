@@ -4,8 +4,8 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const USERNAME = process.env.ADMIN_USERNAME;
-const PASSWORD = process.env.ADMIN_PASSWORD;
+const USERNAME = process.env.ADMIN_USERNAME || 'admin';
+const PASSWORD = process.env.ADMIN_PASSWORD || 'password';
 
 function auth(req, res, next) {
     const user = basicAuth(req);
