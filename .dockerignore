@@ -1,0 +1,5 @@
+**/.dockerignore
+**/.env*
+
+# NPM artefacts
+**/node_modules
