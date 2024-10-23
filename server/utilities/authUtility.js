@@ -1,6 +1,5 @@
-const basicAuth = require('basic-auth');
-const fs = require('fs');
-const dotenv = require('dotenv');
+import basicAuth from 'basic-auth';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -18,4 +17,4 @@ function auth(req, res, next) {
     next();
 }
 
-module.exports = auth;
+export default auth;

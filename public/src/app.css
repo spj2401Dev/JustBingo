@@ -1,3 +1,7 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
 body {
     display: flex;
     justify-content: center;
@@ -8,6 +12,7 @@ body {
     font-weight: lighter;
     background-color: #f8f9fa;
 }
+
 .bingo-container {
     text-align: center;
 }
