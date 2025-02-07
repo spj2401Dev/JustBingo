@@ -15,6 +15,12 @@ JustBingo is a web application built with JavaScript and Express that allows you
 5. **Multiple Field Types**: Flexibility to create various types of fields.
 6. **Perfect for Every Daily Standup**: Make your daily meetings more engaging and fun!
 
+## Usage
+When you first load up the page, there will be nothing. You need to navigate to "/admin". There you will be first of all prompted to login. The default logins are `admin' and 'password`.
+On there you can add your words. You need at least 25 (5x5) to not have any empty fields.
+After that you can just navigate back to the "/" page and you will be served your bingo grid in a random order :D
+Have fun!
+
 ## Self-hosting
 
 ### Natively
