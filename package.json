@@ -12,7 +12,7 @@
   "dependencies": {
     "basic-auth": "^2.0.1",
     "body-parser": "^1.20.2",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.5.0",
     "edit-json-file": "^1.8.1",
     "express": "^4.21.2"
   }
