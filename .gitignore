@@ -132,3 +132,4 @@ dist
 # Custom Stuff
 
 words.json
+public/appsettings.json

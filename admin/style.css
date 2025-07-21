@@ -1,4 +1,5 @@
-body {
+/* Login Screen Styles */
+.login-screen {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -6,23 +7,197 @@ body {
     margin: 0;
     font-family: 'IBMPlexSans', sans-serif;
     background-color: #f8f9fa;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
 }
 
-.container {
-    max-width: 500px;
+.login-container {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
     width: 100%;
     text-align: center;
-    max-height: 100vh;
-    overflow-y: auto;
-    padding: 20px;
-    box-sizing: border-box;
-    scrollbar-width: none;
 }
 
-h1 {
+.login-container h1 {
+    margin-bottom: 30px;
+    font-family: 'Merriweather', serif;
+    color: #333;
+    font-size: 2rem;
+}
+
+.login-form {
+    text-align: left;
+}
+
+.input-group {
     margin-bottom: 20px;
-    font-family: 'Merriweather', sans-serif;
-    font-size: 3em;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: 'IBMPlexSans', sans-serif;
+    box-sizing: border-box;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-family: 'IBMPlexSans', sans-serif;
+}
+
+.login-btn:hover {
+    background-color: #0056b3;
+}
+
+.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.login-info {
+    margin-top: 20px;
+    color: #666;
+    font-size: 12px;
+}
+
+/* Admin Interface Styles */
+.admin-interface {
+    font-family: 'IBMPlexSans', sans-serif;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.admin-header {
+    background: white;
+    border-bottom: 1px solid #dee2e6;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-header h1 {
+    margin: 0;
+    font-family: 'Merriweather', serif;
+    font-size: 2rem;
+    color: #333;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-info span {
+    color: #666;
+    font-weight: 500;
+}
+
+.logout-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.logout-btn:hover {
+    background-color: #c82333;
+}
+
+.admin-main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+    .admin-main p {
+        text-align: center;
+        color: #666;
+        margin-bottom: 30px;
+    }
+
+    /* Tabs Styles */
+    .admin-tabs {
+        display: flex;
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 30px;
+    }
+
+    .tab-button {
+        background: none;
+        border: none;
+        padding: 12px 24px;
+        cursor: pointer;
+        font-size: 16px;
+        font-family: 'IBMPlexSans', sans-serif;
+        color: #666;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .tab-button:hover {
+        color: #007bff;
+        background-color: #f8f9fa;
+    }
+
+    .tab-button.active {
+        color: #007bff;
+        border-bottom-color: #007bff;
+        font-weight: 500;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }.controls {
+    text-align: center;
+    margin-bottom: 30px;
 }
 
 .words-container {
@@ -33,6 +208,10 @@ h1 {
     display: flex;
     align-items: center;
     margin-bottom: 10px;
+    background: white;
+    border-radius: 6px;
+    padding: 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .word-field {
@@ -45,6 +224,11 @@ h1 {
     font-family: 'IBMPlexSans', sans-serif;
 }
 
+.word-field:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
 .remove-button {
     background-color: #dc3545;
     color: #fff;
@@ -53,6 +237,7 @@ h1 {
     margin-left: 10px;
     padding: 8px 12px;
     cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 .remove-button:hover {
@@ -65,18 +250,128 @@ h1 {
     color: #fff;
     border: none;
     border-radius: 4px;
-    padding: 10px 20px;
+    padding: 12px 24px;
     cursor: pointer;
-    margin: 10px 0;
+    margin: 5px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+    font-family: 'IBMPlexSans', sans-serif;
 }
 
-.action-button:hover {
-    background-color: #0056b3;
-}
+    .action-button:hover {
+        background-color: #0056b3;
+    }
 
-.word-type {
+    .action-button.secondary {
+        background-color: #6c757d;
+    }
+
+    .action-button.secondary:hover {
+        background-color: #545b62;
+    }
+
+    /* User Management Styles */
+    .users-container {
+        margin-bottom: 30px;
+    }
+
+    .user-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: white;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 10px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .user-info {
+        flex: 1;
+    }
+
+    .user-email {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 4px;
+    }
+
+    .user-name {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .user-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .user-delete-btn {
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background-color 0.2s ease;
+    }
+
+    .user-delete-btn:hover {
+        background-color: #c82333;
+    }
+
+    /* Add User Form Styles */
+    .add-user-form {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .add-user-form h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-family: 'Merriweather', serif;
+        color: #333;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 14px;
+        font-family: 'IBMPlexSans', sans-serif;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }.word-type {
     flex: 1;
-    max-width: 70px;
+    max-width: 80px;
     padding: 8px;
     border: 1px solid #ced4da;
     border-radius: 0px 4px 4px 0px;
@@ -84,13 +379,53 @@ h1 {
     font-family: 'IBMPlexSans', sans-serif;
 }
 
+.word-type:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
 .time-field {
     flex: 1;
     padding: 8px;
-    max-width: 50px;
+    max-width: 60px;
     border: 1px solid #ced4da;
     border-radius: 4px;
     margin-right: 5px;
     font-size: 14px;
     font-family: 'IBMPlexSans', sans-serif;
+}
+
+.time-field:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .login-container {
+        margin: 20px;
+        padding: 30px;
+    }
+    
+    .admin-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .admin-main {
+        padding: 20px 15px;
+    }
+    
+    .word-field-container {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .word-field, .word-type, .time-field {
+        width: 100%;
+        max-width: none;
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+    }
 }

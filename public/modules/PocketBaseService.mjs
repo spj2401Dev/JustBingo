@@ -60,72 +60,31 @@ export class PocketBaseService {
 
     async login(email, password) {
         if (!this.pb) {
-            throw new Error('PocketBase not initialized. Please ensure the service is initialized first.');
+            throw new Error('PocketBase not initialized');
         }
         
-        // Wait for PocketBase to be fully loaded if it's not ready yet
         if (!this.isConnected) {
-            throw new Error('PocketBase connection not established. Please try again.');
+            throw new Error('PocketBase connection not established');
         }
 
         try {
-            // Method 1: Try modern SDK approach first (if collection method exists)
-            if (this.pb.collection && typeof this.pb.collection === 'function') {
-                console.log('Using modern SDK collection method for authentication');
-                return await this.pb.collection('users').authWithPassword(email, password);
-            }
-            
-            // Method 2: Direct API call for older SDK versions
-            console.log('Using direct API call for authentication');
-            const response = await fetch(`${this.pb.baseUrl}/api/collections/users/auth-with-password`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    identity: email,
-                    password: password
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('Authentication API error:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    errorData
-                });
+            // Try superuser authentication first (for admin operations)
+            try {
+                console.log('Attempting superuser authentication...');
+                const authData = await this.pb.collection('_superusers').authWithPassword(email, password);
+                console.log('Superuser authentication successful');
+                return authData;
+            } catch (superuserError) {
+                console.log('Superuser auth failed, trying regular user...');
                 
-                // Provide specific error messages based on status
-                let errorMessage;
-                switch (response.status) {
-                    case 400:
-                        errorMessage = 'Invalid email or password. Please check your credentials.';
-                        break;
-                    case 404:
-                        errorMessage = 'User not found or authentication service unavailable.';
-                        break;
-                    case 403:
-                        errorMessage = 'Authentication disabled or account not verified.';
-                        break;
-                    default:
-                        errorMessage = errorData.message || `Authentication failed: ${response.statusText}`;
-                }
-                
-                throw new Error(errorMessage);
+                // Fallback to regular user authentication
+                const authData = await this.pb.collection('users').authWithPassword(email, password);
+                console.log('Regular user authentication successful');
+                return authData;
             }
-
-            const authData = await response.json();
-            console.log('Authentication successful, updating auth store');
-            
-            // Manually update the auth store
-            this.pb.authStore.save(authData.token, authData.record);
-            
-            return authData;
-
         } catch (error) {
             console.error('Login failed:', error);
-            throw error;
+            throw new Error('Invalid email or password');
         }
     }
 
@@ -137,6 +96,10 @@ export class PocketBaseService {
 
     isAuthenticated() {
         return this.pb && this.pb.authStore && this.pb.authStore.isValid;
+    }
+
+    isSuperuser() {
+        return this.pb && this.pb.authStore && this.pb.authStore.isValid && this.pb.authStore.isSuperuser;
     }
 
     getCurrentUser() {
@@ -189,7 +152,7 @@ export class PocketBaseService {
         }
     }
 
-    async createOrUpdateBingoGrid(gridName = 'Test', fields) {
+    async createOrUpdateBingoGrid(gridName = 'default', fields) {
         if (!this.pb) throw new Error('PocketBase not initialized');
         if (!this.isAuthenticated()) throw new Error('Authentication required');
 
@@ -291,7 +254,7 @@ export class PocketBaseService {
         }
     }
 
-    async getBingoFields(gridName = 'Test') {
+    async getBingoFields(gridName = 'default') {
         if (!this.pb) throw new Error('PocketBase not initialized');
         
         try {
@@ -336,14 +299,30 @@ export class PocketBaseService {
         if (!this.pb) throw new Error('PocketBase not initialized');
         
         try {
-            // Try to get server health/info
+            // Try to get server health/info  
             const response = await fetch(this.pb.baseUrl + '/api/health');
             console.log('PocketBase health check response:', response.status);
             
             if (response.ok) {
                 const data = await response.json();
                 console.log('PocketBase health data:', data);
-                return { connected: true, data };
+                
+                // Also try to check if users collection exists
+                try {
+                    const authMethods = await fetch(this.pb.baseUrl + '/api/collections/users/auth-methods');
+                    console.log('Users collection auth methods response:', authMethods.status);
+                    if (authMethods.ok) {
+                        const authData = await authMethods.json();
+                        console.log('Available auth methods:', authData);
+                        return { connected: true, data, authMethods: authData };
+                    } else {
+                        console.log('Users collection may not exist or auth not configured');
+                        return { connected: true, data, authMethods: null, warning: 'Users collection not accessible' };
+                    }
+                } catch (authError) {
+                    console.log('Auth methods check failed:', authError);
+                    return { connected: true, data, authMethods: null, warning: 'Could not check auth methods' };
+                }
             } else {
                 console.log('PocketBase health check failed:', response.status);
                 return { connected: false, status: response.status };
