@@ -1,0 +1,72 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: 'IBMPlexSans', sans-serif;
+    font-weight: lighter;
+    background-color: #f8f9fa;
+}
+.bingo-container {
+    text-align: center;
+}
+.bingo-title {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    margin-bottom: 20px;
+}
+.bingo-letter {
+    font-size: 3em;
+    font-weight: bold;
+    color: #343a40;
+    font-family: 'Merriweather', sans-serif;
+    font-weight: 900;
+}
+.bingo-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 110px);
+    grid-template-rows: repeat(5, 110px);
+    gap: 5px;
+}
+.bingo-cell {
+    border: 2px solid #343a40;
+    border-radius: 3px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: #ffffff;
+    color: #343a40;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 5px;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    font-size: 14px;
+    line-break: loose;
+}
+.marked {
+    background-color: #343a40;
+    color: #ffffff;
+}
+
+.disabled {
+    background-color: rgb(183, 183, 183) !important;
+    color: black !important;
+    cursor: not-allowed !important;
+    border-color: rgb(183, 183, 183) !important;
+}
+
+.credits {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    padding: 10px;
+    font-size: 14px;
+}
+
+.github {
+    color: #22522d;
+    text-decoration: none;
+}
