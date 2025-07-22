@@ -7,10 +7,11 @@ const adminController = require("./routes/adminController");
 
 dotenv.config();
 
+app.use('/admin', adminController);
+
 app.use(express.static('public'));
 
 app.use('/api', wordsController);
-app.use('/admin', adminController);
 
 var port = process.env.PORT || 3000;
 var ip = process.env.IP || 'localhost';
