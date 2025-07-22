@@ -1,155 +1,305 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const wordsContainer = document.getElementById('words-container');
-    const saveButton = document.getElementById('save-button');
-    const addWordButton = document.getElementById('add-word-button');
-    const exportButton = document.getElementById('export-button');
-    const importButton = document.getElementById('import-button');
-    const fileInput = document.getElementById('file-input');
+import { apiService } from '../modules/ApiService.mjs';
+import { WordFieldManager } from './modules/fields/index.mjs';
 
-    // Initialize the application
-    initialize();
+class FeatureManager {
+    constructor(apiService) {
+        this.apiService = apiService;
+    }
 
-    async function initialize() {
+    hasAuthentication() {
+        return this.apiService.isUsingPocketBase();
+    }
+
+    hasUserManagement() {
+        return this.apiService.isUsingPocketBase();
+    }
+
+    requiresLogin() {
+        return this.apiService.isUsingPocketBase();
+    }
+
+    hasLogout() {
+        return this.apiService.isUsingPocketBase();
+    }
+}
+
+class AdminApp {
+    constructor() {
+        this.isAuthenticated = false;
+        this.wordsContainer = null;
+        this.wordFieldManager = null;
+        this.saveButton = null;
+        this.addWordButton = null;
+        this.exportButton = null;
+        this.importButton = null;
+        this.fileInput = null;
+        this.currentTab = 'words';
+        this.userManagementSetup = false;
+        this.featureManager = null;
+    }
+
+    async initialize() {
         try {
-            const words = await fetchWords();
+            await apiService.initialize();
+            this.featureManager = new FeatureManager(apiService);
+            
+            this.setupUIBasedOnFeatures();
+            
+            if (this.featureManager.requiresLogin()) {
+                await this.handleAuthentication();
+            } else {
+                this.showAdminInterface();
+                await this.initializeAdminInterface();
+            }
+        } catch (error) {
+            console.error('Failed to initialize admin app:', error);
+            this.showError('Failed to initialize application');
+        }
+    }
+
+    setupUIBasedOnFeatures() {
+        const loginScreen = document.getElementById('login-screen');
+        const adminInterface = document.getElementById('admin-interface');
+        
+        if (!this.featureManager.hasAuthentication()) {
+            loginScreen.style.display = 'none';
+        }
+
+        const logoutBtn = document.getElementById('logout-btn');
+        const userInfo = document.querySelector('.user-info');
+        if (!this.featureManager.hasLogout()) {
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (userInfo) {
+                // Keep dropdown structure but hide logout button
+                userInfo.innerHTML = `
+                    <div class="user-dropdown">
+                        <span id="user-display" class="user-display-name">Admin User</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Hide/show user management tab
+        const usersTab = document.getElementById('users-tab');
+        if (this.featureManager.hasUserManagement()) {
+            usersTab.style.display = 'block';
+        } else {
+            usersTab.style.display = 'none';
+        }
+    }
+
+    async handleAuthentication() {
+        if (!this.featureManager.hasAuthentication()) {
+            this.showAdminInterface();
+            await this.initializeAdminInterface();
+            return;
+        }
+
+        const loginScreen = document.getElementById('login-screen');
+        const adminInterface = document.getElementById('admin-interface');
+        
+        if (apiService.isAuthenticated()) {
+            this.showAdminInterface();
+            await this.initializeAdminInterface();
+            return;
+        }
+
+        loginScreen.style.display = 'flex';
+        adminInterface.style.display = 'none';
+
+        this.setupLoginHandlers();
+    }
+
+    setupLoginHandlers() {
+        if (!this.featureManager.hasAuthentication()) {
+            return;
+        }
+
+        const loginForm = document.getElementById('login-form');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.handleEmailLogin();
+            });
+        }
+
+        if (logoutBtn && this.featureManager.hasLogout()) {
+            logoutBtn.addEventListener('click', () => {
+                this.handleLogout();
+            });
+        }
+    }
+
+    async handleEmailLogin() {
+        if (!this.featureManager.hasAuthentication()) {
+            return;
+        }
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const errorDiv = document.getElementById('login-error');
+
+        try {
+            if (errorDiv) errorDiv.style.display = 'none';
+            await apiService.login(email, password);
+            this.showAdminInterface();
+            await this.initializeAdminInterface();
+        } catch (error) {
+            console.error('Login failed:', error);
+            if (errorDiv) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+    }
+
+    handleLogout() {
+        if (!this.featureManager.hasLogout()) {
+            return;
+        }
+
+        apiService.logout();
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('admin-interface').style.display = 'none';
+    }
+
+    showAdminInterface() {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('admin-interface').style.display = 'block';
+        
+        const userDisplay = document.getElementById('user-display');
+        if (this.featureManager.hasAuthentication()) {
+            const currentUser = apiService.getCurrentUser();
+            if (currentUser && userDisplay) {
+                userDisplay.textContent = currentUser.email || currentUser.username || 'Admin User';
+            }
+        } else {
+            if (userDisplay) {
+                userDisplay.textContent = 'Admin User';
+            }
+        }
+        
+        this.isAuthenticated = true;
+    }
+
+    async initializeAdminInterface() {
+        this.wordsContainer = document.getElementById('words-container');
+        this.wordFieldManager = new WordFieldManager(this.wordsContainer);
+        this.saveButton = document.getElementById('save-button');
+        this.addWordButton = document.getElementById('add-word-button');
+        this.exportButton = document.getElementById('export-button');
+        this.importButton = document.getElementById('import-button');
+        this.fileInput = document.getElementById('file-input');
+
+        this.setupAdminEventListeners();
+        
+        this.setupTabs();
+
+        try {
+            const words = await apiService.getAdminWords();
             if (words.length === 0) {
-                displayNoWordsMessage();
+                this.wordFieldManager.displayNoWordsMessage();
             } else {
-                words.forEach(wordObj => addWordField(wordObj.word, wordObj.type, wordObj.time));
+                words.forEach(wordObj => this.wordFieldManager.addField(wordObj.word, wordObj.type, wordObj.time));
             }
         } catch (error) {
-            handleFetchError(error);
+            this.handleFetchError(error);
         }
     }
 
-    // Fetch words from the server
-    async function fetchWords() {
-        const response = await fetch('/admin/words');
-        if (!response.ok) {
-            throw new Error('Failed to fetch words');
+    setupAdminEventListeners() {
+        this.addWordButton.addEventListener('click', () => this.wordFieldManager.addField());
+
+        this.saveButton.addEventListener('click', async () => {
+            await this.saveWords();
+        });
+
+        this.exportButton.addEventListener('click', () => {
+            this.exportWords();
+        });
+
+        this.importButton.addEventListener('click', () => {
+            this.fileInput.click();
+        });
+
+        this.fileInput.addEventListener('change', async () => {
+            await this.importWords();
+        });
+
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn && this.featureManager.hasLogout()) {
+            logoutBtn.addEventListener('click', () => {
+                this.handleLogout();
+            });
         }
-        return await response.json();
+
+        // Setup user dropdown functionality
+        this.setupUserDropdown();
     }
 
-    // Display a message if no words are found
-    function displayNoWordsMessage() {
-        wordsContainer.innerHTML = '<p>No words found.</p>';
+    setupUserDropdown() {
+        const userDisplay = document.getElementById('user-display');
+        const userDropdown = document.querySelector('.user-dropdown');
+
+        if (userDisplay && userDropdown) {
+            // Toggle dropdown on click
+            userDisplay.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('active');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!userDropdown.contains(e.target)) {
+                    userDropdown.classList.remove('active');
+                }
+            });
+
+            // Close dropdown when pressing escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    userDropdown.classList.remove('active');
+                }
+            });
+        }
     }
 
-    // Handle fetch errors
-    function handleFetchError(error) {
+    displayNoWordsMessage() {
+        this.wordsContainer.innerHTML = '<p>No words found.</p>';
+    }
+
+    handleFetchError(error) {
         console.error('Error fetching words:', error);
-        wordsContainer.innerHTML = '<p>Error loading words. Please try again later.</p>';
+        this.wordFieldManager.displayErrorMessage();
     }
 
-    function addWordField(value = '', type = 'Field', time = '') {
-        const container = document.createElement('div');
-        container.className = 'word-field-container';
-
-        const timeInput = document.createElement('input');
-        timeInput.type = 'number';
-        timeInput.placeholder = 'Sec';
-        timeInput.className = 'time-field';
-        timeInput.value = time;
-
-        const inputField = document.createElement('input');
-        inputField.type = 'text';
-        inputField.value = value;
-        inputField.className = 'word-field';
-
-        const typeDropdown = document.createElement('select');
-        const options = ['Field', 'Free', 'Timer'];
-        options.forEach(option => {
-            const opt = document.createElement('option');
-            opt.value = option;
-            opt.textContent = option;
-            if (option === type) opt.selected = true;
-            typeDropdown.appendChild(opt);
-        });
-
-        typeDropdown.className = 'word-type';
-
-        typeDropdown.addEventListener('change', () => {
-            if (typeDropdown.value === 'Timer') {
-                timeInput.style.display = 'block';
-            } else {
-                timeInput.style.display = 'none';
-            }
-        });
-
-        // Set initial visibility based on type
-        timeInput.style.display = type === 'Timer' ? 'block' : 'none';
-
-        const removeButton = document.createElement('button');
-        removeButton.textContent = 'X';
-        removeButton.className = 'remove-button';
-        removeButton.addEventListener('click', () => {
-            container.remove();
-        });
-
-        container.appendChild(timeInput);
-        container.appendChild(inputField);
-        container.appendChild(typeDropdown);
-        container.appendChild(removeButton);
-        wordsContainer.appendChild(container);
-    }
-
-    // Add a new word field when the "Add Word" button is clicked
-    addWordButton.addEventListener('click', () => addWordField());
-
-    saveButton.addEventListener('click', async () => {
-        const updatedWords = Array.from(document.querySelectorAll('.word-field-container')).map(container => {
-            return {
-                word: container.querySelector('.word-field').value,
-                type: container.querySelector('.word-type').value,
-                time: container.querySelector('.time-field').style.display === 'block' ? container.querySelector('.time-field').value : null // Get time if it's visible
-            };
-        });
+    async saveWords() {
+        const updatedWords = this.wordFieldManager.getAllValues();
 
         try {
-            await saveWords(updatedWords);
-            displaySaveSuccess();
+            await apiService.saveWords(updatedWords);
+            this.displaySaveSuccess();
         } catch (error) {
-            handleSaveError(error);
+            this.handleSaveError(error);
         }
-    });
-
-    async function saveWords(words) {
-        const response = await fetch('/admin/words', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ words }),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to save words');
-        }
-        return await response.json();
     }
 
-    function displaySaveSuccess() {
-        saveButton.textContent = 'Saved...';
+    displaySaveSuccess() {
+        this.saveButton.textContent = 'Saved...';
         setTimeout(() => {
-            saveButton.textContent = 'Save';
+            this.saveButton.textContent = 'Save Words';
         }, 3000);
     }
 
-    function handleSaveError(error) {
+    handleSaveError(error) {
         console.error('Error saving words:', error);
         alert('Failed to save words. Please try again.');
     }
 
-    // Export words as a JSON file
-    exportButton.addEventListener('click', () => {
-        const words = Array.from(document.querySelectorAll('.word-field-container')).map(container => {
-            return {
-                word: container.querySelector('.word-field').value,
-                type: container.querySelector('.word-type').value,
-                time: container.querySelector('.time-field').style.display === 'block' ? container.querySelector('.time-field').value : null
-            };
-        });
+    exportWords() {
+        const words = this.wordFieldManager.getAllValues();
 
         const blob = new Blob([JSON.stringify({ words }, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -158,22 +308,18 @@ document.addEventListener('DOMContentLoaded', () => {
         a.download = 'words.json';
         a.click();
         URL.revokeObjectURL(url);
-    });
+    }
 
-    // Trigger file input click to import words
-    importButton.addEventListener('click', () => fileInput.click());
-
-    // Handle file input change to import words
-    fileInput.addEventListener('change', async () => {
-        const file = fileInput.files[0];
+    async importWords() {
+        const file = this.fileInput.files[0];
         if (file) {
             try {
                 const content = await file.text();
                 const json = JSON.parse(content);
 
-                if (isValidWordData(json)) {
-                    wordsContainer.innerHTML = ''; // Clear current words
-                    json.words.forEach(wordObj => addWordField(wordObj.word, wordObj.type, wordObj.time)); // Add imported words
+                if (this.isValidWordData(json)) {
+                    this.wordFieldManager.clearAllFields();
+                    json.words.forEach(wordObj => this.wordFieldManager.addField(wordObj.word, wordObj.type, wordObj.time));
                 } else {
                     alert('Invalid JSON format. Please provide a valid words file.');
                 }
@@ -182,10 +328,243 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Failed to import JSON. Please check the file and try again.');
             }
         }
-    });
-
-    // Validate imported JSON structure
-    function isValidWordData(data) {
-        return Array.isArray(data.words) && data.words.every(word => typeof word === 'object' && typeof word.word === 'string' && typeof word.type === 'string' && (typeof word.time === 'string' || word.time === null));
     }
+
+    isValidWordData(data) {
+        return Array.isArray(data.words) && data.words.every(word => 
+            typeof word === 'object' && 
+            typeof word.word === 'string' && 
+            typeof word.type === 'string' && 
+            (typeof word.time === 'string' || word.time === null)
+        );
+    }
+
+    showError(message) {
+        const errorDiv = document.getElementById('login-error');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        } else {
+            alert(message);
+        }
+    }
+
+    setupTabs() {
+        const wordsTab = document.getElementById('words-tab');
+        const usersTab = document.getElementById('users-tab');
+
+        // Show/hide user management tab based on features
+        if (this.featureManager.hasUserManagement()) {
+            usersTab.style.display = 'block';
+        } else {
+            usersTab.style.display = 'none';
+        }
+
+        wordsTab.addEventListener('click', () => {
+            this.switchTab('words');
+        });
+
+        if (this.featureManager.hasUserManagement()) {
+            usersTab.addEventListener('click', () => {
+                this.switchTab('users');
+            });
+        }
+    }
+
+    switchTab(tab) {
+        const wordsTab = document.getElementById('words-tab');
+        const usersTab = document.getElementById('users-tab');
+        const wordsSection = document.getElementById('words-section');
+        const usersSection = document.getElementById('users-section');
+
+        wordsTab.classList.toggle('active', tab === 'words');
+        usersTab.classList.toggle('active', tab === 'users');
+
+        wordsSection.classList.toggle('active', tab === 'words');
+        usersSection.classList.toggle('active', tab === 'users');
+
+        this.currentTab = tab;
+
+        if (tab === 'users' && this.featureManager.hasUserManagement()) {
+            if (!this.userManagementSetup) {
+                this.setupUserManagement();
+                this.userManagementSetup = true;
+            }
+            this.loadUsers();
+        }
+    }
+
+    setupUserManagement() {
+        const addUserButton = document.getElementById('add-user-button');
+        const refreshUsersButton = document.getElementById('refresh-users-button');
+        const createUserButton = document.getElementById('create-user-button');
+        const cancelUserButton = document.getElementById('cancel-user-button');
+
+        if (!addUserButton) return; // Elements might not exist yet
+
+        addUserButton.addEventListener('click', () => {
+            this.showAddUserForm();
+        });
+
+        refreshUsersButton.addEventListener('click', () => {
+            this.loadUsers();
+        });
+
+        createUserButton.addEventListener('click', () => {
+            this.createUser();
+        });
+
+        cancelUserButton.addEventListener('click', () => {
+            this.hideAddUserForm();
+        });
+    }
+
+    async loadUsers() {
+        if (!this.featureManager.hasUserManagement()) return;
+
+        try {
+            const users = await apiService.getUsers();
+            this.displayUsers(users);
+        } catch (error) {
+            console.error('Failed to load users:', error);
+            this.showError('Failed to load users: ' + error.message);
+        }
+    }
+
+    displayUsers(users) {
+        const usersContainer = document.getElementById('users-container');
+        usersContainer.innerHTML = '';
+
+        if (users.length === 0) {
+            usersContainer.innerHTML = '<p>No users found.</p>';
+            return;
+        }
+
+        users.forEach(user => {
+            const userItem = document.createElement('div');
+            userItem.className = 'user-item';
+            
+            const verifiedBadge = user.verified ? 
+                '<span style="color: #28a745; font-size: 12px;">✓ Verified</span>' : 
+                '<span style="color: #dc3545; font-size: 12px;">⚠ Unverified</span>';
+            
+            const createdDate = new Date(user.created).toLocaleDateString();
+            
+            userItem.innerHTML = `
+                <div class="user-info">
+                    <div class="user-email">${user.email} ${verifiedBadge}</div>
+                    <div class="user-name">${user.name || 'No name set'} • Created: ${createdDate}</div>
+                </div>
+                <div class="user-actions">
+                    <button class="user-delete-btn" onclick="window.adminApp.deleteUser('${user.id}', '${user.email}')">Delete</button>
+                </div>
+            `;
+            usersContainer.appendChild(userItem);
+        });
+    }
+
+    showAddUserForm() {
+        const form = document.getElementById('add-user-form');
+        form.style.display = 'block';
+        
+        document.getElementById('new-user-email').value = '';
+        document.getElementById('new-user-name').value = '';
+        document.getElementById('new-user-password').value = '';
+        document.getElementById('new-user-password-confirm').value = '';
+    }
+
+    hideAddUserForm() {
+        const form = document.getElementById('add-user-form');
+        form.style.display = 'none';
+    }
+
+    async createUser() {
+        const email = document.getElementById('new-user-email').value;
+        const name = document.getElementById('new-user-name').value;
+        const password = document.getElementById('new-user-password').value;
+        const passwordConfirm = document.getElementById('new-user-password-confirm').value;
+
+        if (!email || !password) {
+            this.showError('Email and password are required');
+            return;
+        }
+
+        if (password !== passwordConfirm) {
+            this.showError('Passwords do not match');
+            return;
+        }
+
+        if (password.length < 6) {
+            this.showError('Password must be at least 6 characters');
+            return;
+        }
+
+        try {
+            const userData = {
+                email,
+                password,
+                passwordConfirm,
+                emailVisibility: true
+            };
+
+            if (name && name.trim()) {
+                userData.name = name.trim();
+            }
+
+            console.log('Creating user:', email);
+            const newUser = await apiService.createUser(userData);
+            console.log('User created successfully:', newUser.id);
+
+            if (apiService.isSuperuser()) {
+                try {
+                    await apiService.updateUser(newUser.id, { verified: true });
+                    console.log('User verified successfully');
+                } catch (verifyError) {
+                    console.warn('Could not verify user:', verifyError.message);
+                }
+            }
+
+            this.hideAddUserForm();
+            await this.loadUsers();
+            this.showSuccess('User created successfully');
+        } catch (error) {
+            console.error('Failed to create user:', error);
+            
+            let errorMessage = 'Failed to create user';
+            if (error.data?.email) {
+                errorMessage = 'Email error: ' + error.data.email.message;
+            } else if (error.data?.password) {
+                errorMessage = 'Password error: ' + error.data.password.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            this.showError(errorMessage);
+        }
+    }
+
+    async deleteUser(userId, userEmail) {
+        if (!confirm(`Are you sure you want to delete user: ${userEmail}?`)) {
+            return;
+        }
+
+        try {
+            await apiService.deleteUser(userId);
+            this.loadUsers();
+            this.showSuccess('User deleted successfully');
+        } catch (error) {
+            console.error('Failed to delete user:', error);
+            this.showError('Failed to delete user: ' + error.message);
+        }
+    }
+
+    showSuccess(message) {
+        console.log(message);
+        alert(message);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    window.adminApp = new AdminApp();
+    await window.adminApp.initialize();
 });
