@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "http-server": "^14.1.1",
-    "pocketbase": "^0.21.1"
+    "pocketbase": "^0.26.1"
   },
   "keywords": [
     "bingo",
