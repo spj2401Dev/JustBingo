@@ -11,7 +11,7 @@ export class ApiService {
 
     async initialize() {
         try {
-            const response = await fetch('./appsettings.json');
+            const response = await fetch(new URL('appsettings.json', document.baseURI).href);
             this.config = await response.json();
 
             if (this.config.usingPocketBase && this.config.pocketBaseUrl) {
