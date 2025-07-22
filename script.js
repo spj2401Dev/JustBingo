@@ -1,5 +1,5 @@
-import { apiService } from './modules/ApiService.mjs';
-import CellFactory from './modules/fields/index.mjs';
+import { apiService } from './modules/ApiService.js';
+import CellFactory from './modules/fields/index.js';
 
 document.addEventListener("DOMContentLoaded", async () => {
     

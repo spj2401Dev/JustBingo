@@ -1,5 +1,5 @@
-import { apiService } from '../modules/ApiService.mjs';
-import { WordFieldManager } from './modules/fields/index.mjs';
+import { apiService } from '../modules/ApiService.js';
+import { WordFieldManager } from './modules/fields/index.js';
 
 class FeatureManager {
     constructor(apiService) {
@@ -119,9 +119,27 @@ class AdminApp {
         const logoutBtn = document.getElementById('logout-btn');
 
         if (loginForm) {
+            // Add event listener for form submit
             loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 await this.handleEmailLogin();
+            });
+
+            // Also add event listener for Enter key on input fields as backup
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            
+            [emailInput, passwordInput].forEach(input => {
+                if (input) {
+                    input.addEventListener('keydown', async (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            await this.handleEmailLogin();
+                        }
+                    });
+                }
             });
         }
 
@@ -134,24 +152,35 @@ class AdminApp {
 
     async handleEmailLogin() {
         if (!this.featureManager.hasAuthentication()) {
-            return;
+            return false;
         }
 
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const errorDiv = document.getElementById('login-error');
-
         try {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('login-error');
+
+            // Clear any previous errors
             if (errorDiv) errorDiv.style.display = 'none';
+
+            // Validate inputs
+            if (!email || !password) {
+                throw new Error('Please enter both email and password');
+            }
+
+            // Attempt login
             await apiService.login(email, password);
             this.showAdminInterface();
             await this.initializeAdminInterface();
+            return true;
         } catch (error) {
             console.error('Login failed:', error);
+            const errorDiv = document.getElementById('login-error');
             if (errorDiv) {
-                errorDiv.textContent = error.message;
+                errorDiv.textContent = error.message || 'Login failed. Please try again.';
                 errorDiv.style.display = 'block';
             }
+            return false;
         }
     }
 

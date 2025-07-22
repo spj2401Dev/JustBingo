@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Just Bingo</title>
-    <link rel="stylesheet" href="/admin/style.css">
-    <link rel="stylesheet" href="./resources/fonts/Merriweather/merriweather.css">
-    <link rel="stylesheet" href="./resources/fonts/IBMPlexSans/ibmPlexSans.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="stylesheet" href="../resources/fonts/Merriweather/merriweather.css">
+    <link rel="stylesheet" href="../resources/fonts/IBMPlexSans/ibmPlexSans.css">
     <script src="../resources/libs/pocketbase.umd.js" defer></script>
 </head>
 <body>
@@ -16,7 +16,7 @@
             <div id="login-error" class="error-message" style="display: none;"></div>
             
             <!-- Email/Password Login -->
-            <form id="login-form" class="login-form">
+            <form id="login-form" class="login-form" onsubmit="return false;">
                 <div class="input-group">
                     <label for="email">Email:</label>
                     <input type="email" id="email" name="email" required>
@@ -112,6 +112,6 @@
         </main>
     </div>
     
-    <script type="module" src="./admin/script.js"></script>
+    <script type="module" src="./script.js"></script>
 </body>
 </html>

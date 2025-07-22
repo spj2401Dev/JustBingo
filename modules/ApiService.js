@@ -1,7 +1,7 @@
 /**
  * Unified API Service - Handles API calls to either PocketBase or Backend
  */
-import { pocketBaseService } from './PocketBaseService.mjs';
+import { pocketBaseService } from './PocketBaseService.js';
 
 export class ApiService {
     constructor() {

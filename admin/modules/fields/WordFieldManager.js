@@ -2,7 +2,7 @@
  * WordFieldManager - Manages multiple word fields in the admin interface
  * Provides methods to add, remove, and collect data from word fields
  */
-import WordField from './WordField.mjs';
+import WordField from './WordField.js';
 
 export class WordFieldManager {
     constructor(container) {

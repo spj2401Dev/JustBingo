@@ -2,9 +2,9 @@
  * CellFactory - Factory class for creating different types of bingo cells
  * Manages the creation and instantiation of field types based on word object data
  */
-import TimerField from './TimerField.mjs';
-import FieldCell from './FieldCell.mjs';
-import FreeCell from './FreeCell.mjs';
+import TimerField from './TimerField.js';
+import FieldCell from './FieldCell.js';
+import FreeCell from './FreeCell.js';
 
 export class CellFactory {
     static confettiColors = ['#42f569', '#23522d', '#05756a', '#6dd16d', '#0caae8'];
