@@ -8,6 +8,18 @@
     <link rel="stylesheet" href="../resources/fonts/Merriweather/merriweather.css">
     <link rel="stylesheet" href="../resources/fonts/IBMPlexSans/ibmPlexSans.css">
     <script src="../resources/libs/pocketbase.umd.js" defer></script>
+
+    <!-- Load app settings first -->
+    <script>
+        (async function() {
+            try {
+                const response = await fetch('../appsettings.json');
+                window.appSettings = await response.json();
+            } catch (error) {
+                console.error('Failed to load app settings:', error);
+            }
+        })();
+    </script>
 </head>
 <body>
     <div id="login-screen" class="login-screen">

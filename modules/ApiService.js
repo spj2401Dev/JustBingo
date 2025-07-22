@@ -11,8 +11,14 @@ export class ApiService {
 
     async initialize() {
         try {
-            const response = await fetch(new URL('appsettings.json', document.baseURI).href);
-            this.config = await response.json();
+            // Get config from window or fetch it
+            if (window.appSettings) {
+                this.config = window.appSettings;
+            } else {
+                // Fallback: fetch directly (for backwards compatibility)
+                const response = await fetch('./appsettings.json');
+                this.config = await response.json();
+            }
 
             if (this.config.usingPocketBase && this.config.pocketBaseUrl) {
                 await pocketBaseService.initialize(this.config.pocketBaseUrl);

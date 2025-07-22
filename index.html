@@ -15,6 +15,18 @@
     
     <script src="./resources/libs/pocketbase.umd.js" defer></script>
 
+    <!-- Load app settings first -->
+    <script>
+        (async function() {
+            try {
+                const response = await fetch('./appsettings.json');
+                window.appSettings = await response.json();
+            } catch (error) {
+                console.error('Failed to load app settings:', error);
+            }
+        })();
+    </script>
+
     <script src="./script.js" type="module" defer></script>
 </head>
 
