@@ -7,11 +7,9 @@
     <link rel="stylesheet" href="/admin/style.css">
     <link rel="stylesheet" href="/resources/fonts/Merriweather/merriweather.css">
     <link rel="stylesheet" href="/resources/fonts/IBMPlexSans/ibmPlexSans.css">
-    <!-- PocketBase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/pocketbase@0.21.1/dist/pocketbase.umd.js" defer></script>
+    <script src="../resources/libs/pocketbase.umd.js" defer></script>
 </head>
 <body>
-    <!-- Login Screen -->
     <div id="login-screen" class="login-screen">
         <div class="login-container">
             <h1>Admin Login</h1>
@@ -36,27 +34,36 @@
         </div>
     </div>
 
-    <!-- Admin Interface -->
     <div id="admin-interface" class="admin-interface" style="display: none;">
-        <header class="admin-header">
-            <h1>Configure Words</h1>
-            <div class="user-info">
-                <span id="user-display">Loading...</span>
-                <button id="logout-btn" class="logout-btn">Logout</button>
+        <div class="admin-top-section">
+            <div class="logo-container">
+                <img src="../resources/Logo.webp" class="logo">
             </div>
-        </header>
+            <div class="admin-title-container">
+                <h1>Admin Dashboard</h1>
+            </div>
+            <div class="user-info">
+                <div class="user-dropdown">
+                    <span id="user-display" class="user-display-name">Loading...</span>
+                    <div class="dropdown-content">
+                        <button id="logout-btn" class="logout-btn">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <main class="admin-main">
-            <!-- Navigation Tabs -->
             <div class="admin-tabs">
                 <button id="words-tab" class="tab-button active">Words Management</button>
                 <button id="users-tab" class="tab-button" style="display: none;">User Management</button>
             </div>
 
-            <!-- Words Management Section -->
             <div id="words-section" class="tab-content active">
                 <p>Add the words to the bingo grid. The order of the words does not matter as they are all randomized.</p>
                 
+                
+                <div id="words-container" class="words-container">
+                </div>
                 <div class="controls">
                     <button id="add-word-button" class="action-button">Add Word</button>
                     <button id="save-button" class="action-button">Save Words</button>
@@ -64,13 +71,8 @@
                     <button id="import-button" class="action-button">Import JSON</button>
                     <input type="file" id="file-input" accept=".json" style="display: none;">
                 </div>
-
-                <div id="words-container" class="words-container">
-                    <!-- Word fields will be added here dynamically -->
-                </div>
             </div>
-
-            <!-- Users Management Section (PocketBase only) -->
+            
             <div id="users-section" class="tab-content">
                 <p>Manage users who can access the admin interface.</p>
                 
@@ -78,12 +80,11 @@
                     <button id="add-user-button" class="action-button">Add User</button>
                     <button id="refresh-users-button" class="action-button">Refresh Users</button>
                 </div>
-
+                
                 <div id="users-container" class="users-container">
-                    <!-- User list will be added here dynamically -->
+                    
                 </div>
-
-                <!-- Add User Form -->
+                
                 <div id="add-user-form" class="add-user-form" style="display: none;">
                     <h3>Add New User</h3>
                     <div class="form-group">
@@ -110,7 +111,7 @@
             </div>
         </main>
     </div>
-
+    
     <script type="module" src="/admin/script.js"></script>
 </body>
 </html>

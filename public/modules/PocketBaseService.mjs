@@ -67,19 +67,15 @@ export class PocketBaseService {
             throw new Error('PocketBase connection not established');
         }
 
+        // If regular users not found try superusers.
+
         try {
-            // Try superuser authentication first (for admin operations)
             try {
-                console.log('Attempting superuser authentication...');
-                const authData = await this.pb.collection('_superusers').authWithPassword(email, password);
-                console.log('Superuser authentication successful');
-                return authData;
-            } catch (superuserError) {
-                console.log('Superuser auth failed, trying regular user...');
-                
-                // Fallback to regular user authentication
                 const authData = await this.pb.collection('users').authWithPassword(email, password);
                 console.log('Regular user authentication successful');
+                return authData;
+            } catch (error) {
+                const authData = await this.pb.collection('_superusers').authWithPassword(email, password);
                 return authData;
             }
         } catch (error) {
@@ -110,43 +106,17 @@ export class PocketBaseService {
         return this.pb !== null && this.isConnected && typeof PocketBase !== 'undefined';
     }
 
-    // Bingo Grids operations
     async getBingoGrid(gridName = 'Test') {
         if (!this.pb) throw new Error('PocketBase not initialized');
         
         try {
-            let result;
-            
-            // Method 1: Try modern SDK with collection method
-            if (this.pb.collection && typeof this.pb.collection === 'function') {
-                console.log('Using modern SDK collection method for getBingoGrid');
-                result = await this.pb.collection('bingoGrids').getFirstListItem(`bingoGridName="${gridName}"`, {
-                    expand: 'bingoFields'
-                });
-            } else {
-                // Method 2: Direct API call for older SDK
-                console.log('Using direct API call for getBingoGrid');
-                const response = await fetch(`${this.pb.baseUrl}/api/collections/bingoGrids/records?filter=${encodeURIComponent(`bingoGridName="${gridName}"`)}&expand=bingoFields&perPage=1`, {
-                    headers: {
-                        'Authorization': this.pb.authStore.token ? `Bearer ${this.pb.authStore.token}` : ''
-                    }
-                });
-                
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        return null; // Grid doesn't exist
-                    }
-                    throw new Error(`Failed to fetch bingo grid: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                result = data.items && data.items.length > 0 ? data.items[0] : null;
-            }
-            
+            const result = await this.pb.collection('bingoGrids').getFirstListItem(`bingoGridName="${gridName}"`, {
+                expand: 'bingoFields'
+            });
             return result;
         } catch (error) {
             if (error.status === 404 || error.message.includes('404')) {
-                return null; // Grid doesn't exist
+                return null;
             }
             throw error;
         }
@@ -157,94 +127,40 @@ export class PocketBaseService {
         if (!this.isAuthenticated()) throw new Error('Authentication required');
 
         try {
-            // First, try to get existing grid
             let grid = await this.getBingoGrid(gridName);
             
             if (grid) {
-                console.log('Grid exists, deleting existing fields');
-                // Delete existing fields
-                if (this.pb.collection && typeof this.pb.collection === 'function') {
-                    const existingFields = await this.pb.collection('bingoFields').getFullList({
-                        filter: `bingoGrid="${grid.id}"`
-                    });
-                    for (const field of existingFields) {
-                        await this.pb.collection('bingoFields').delete(field.id);
-                    }
-                } else {
-                    // Direct API call to get and delete existing fields
-                    const response = await fetch(`${this.pb.baseUrl}/api/collections/bingoFields/records?filter=${encodeURIComponent(`bingoGrid="${grid.id}"`)}`, {
-                        headers: {
-                            'Authorization': `Bearer ${this.pb.authStore.token}`
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        for (const field of data.items) {
-                            await fetch(`${this.pb.baseUrl}/api/collections/bingoFields/records/${field.id}`, {
-                                method: 'DELETE',
-                                headers: {
-                                    'Authorization': `Bearer ${this.pb.authStore.token}`
-                                }
-                            });
-                        }
-                    }
+                console.log('Grid exists, deleting existing fields first');
+                
+                const existingFields = await this.pb.collection('bingoFields').getFullList({
+                    filter: `bingoGrid="${grid.id}"`
+                });
+                
+                for (const field of existingFields) {
+                    await this.pb.collection('bingoFields').delete(field.id);
                 }
             } else {
                 console.log('Creating new grid');
-                // Create new grid
-                if (this.pb.collection && typeof this.pb.collection === 'function') {
-                    grid = await this.pb.collection('bingoGrids').create({
-                        bingoGridName: gridName
-                    });
-                } else {
-                    // Direct API call to create grid
-                    const response = await fetch(`${this.pb.baseUrl}/api/collections/bingoGrids/records`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${this.pb.authStore.token}`
-                        },
-                        body: JSON.stringify({
-                            bingoGridName: gridName
-                        })
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`Failed to create bingo grid: ${response.statusText}`);
-                    }
-                    
-                    grid = await response.json();
-                }
+                grid = await this.pb.collection('bingoGrids').create({
+                    bingoGridName: gridName
+                });
             }
 
-            console.log('Creating fields for grid:', grid.id);
-            // Create new fields
-            for (const field of fields) {
-                const fieldData = {
-                    text: field.word,
-                    type: field.type,
-                    time: field.time,
-                    bingoGrid: grid.id
-                };
+            if (fields && fields.length > 0) {
+                console.log('Creating fields in batch for grid:', grid.id);
+                const batch = this.pb.createBatch();
                 
-                if (this.pb.collection && typeof this.pb.collection === 'function') {
-                    await this.pb.collection('bingoFields').create(fieldData);
-                } else {
-                    // Direct API call to create field
-                    const response = await fetch(`${this.pb.baseUrl}/api/collections/bingoFields/records`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${this.pb.authStore.token}`
-                        },
-                        body: JSON.stringify(fieldData)
-                    });
-                    
-                    if (!response.ok) {
-                        console.error(`Failed to create field: ${response.statusText}`);
-                    }
+                for (const field of fields) {
+                    const fieldData = {
+                        text: field.word,
+                        type: field.type,
+                        time: field.time,
+                        bingoGrid: grid.id
+                    };
+                    batch.collection('bingoFields').create(fieldData);
                 }
+
+                await batch.send();
             }
 
             return await this.getBingoGrid(gridName);
@@ -261,27 +177,9 @@ export class PocketBaseService {
             const grid = await this.getBingoGrid(gridName);
             if (!grid) return [];
 
-            let fields;
-            if (this.pb.collection && typeof this.pb.collection === 'function') {
-                fields = await this.pb.collection('bingoFields').getFullList({
-                    filter: `bingoGrid="${grid.id}"`
-                });
-            } else {
-                // Direct API call for older SDK
-                const response = await fetch(`${this.pb.baseUrl}/api/collections/bingoFields/records?filter=${encodeURIComponent(`bingoGrid="${grid.id}"`)}&perPage=500`, {
-                    headers: {
-                        'Authorization': this.pb.authStore.token ? `Bearer ${this.pb.authStore.token}` : ''
-                    }
-                });
-                
-                if (!response.ok) {
-                    console.error(`Failed to fetch bingo fields: ${response.statusText}`);
-                    return [];
-                }
-                
-                const data = await response.json();
-                fields = data.items || [];
-            }
+            const fields = await this.pb.collection('bingoFields').getFullList({
+                filter: `bingoGrid="${grid.id}"`
+            });
 
             return fields.map(field => ({
                 word: field.text,
@@ -293,119 +191,6 @@ export class PocketBaseService {
             return [];
         }
     }
-
-    // Test PocketBase connection
-    async testConnection() {
-        if (!this.pb) throw new Error('PocketBase not initialized');
-        
-        try {
-            // Try to get server health/info  
-            const response = await fetch(this.pb.baseUrl + '/api/health');
-            console.log('PocketBase health check response:', response.status);
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('PocketBase health data:', data);
-                
-                // Also try to check if users collection exists
-                try {
-                    const authMethods = await fetch(this.pb.baseUrl + '/api/collections/users/auth-methods');
-                    console.log('Users collection auth methods response:', authMethods.status);
-                    if (authMethods.ok) {
-                        const authData = await authMethods.json();
-                        console.log('Available auth methods:', authData);
-                        return { connected: true, data, authMethods: authData };
-                    } else {
-                        console.log('Users collection may not exist or auth not configured');
-                        return { connected: true, data, authMethods: null, warning: 'Users collection not accessible' };
-                    }
-                } catch (authError) {
-                    console.log('Auth methods check failed:', authError);
-                    return { connected: true, data, authMethods: null, warning: 'Could not check auth methods' };
-                }
-            } else {
-                console.log('PocketBase health check failed:', response.status);
-                return { connected: false, status: response.status };
-            }
-        } catch (error) {
-            console.error('PocketBase connection test failed:', error);
-            return { connected: false, error: error.message };
-        }
-    }
-
-    // Debug method to check PocketBase status
-    getStatus() {
-        const status = {
-            sdkAvailable: typeof PocketBase !== 'undefined',
-            initialized: this.pb !== null,
-            connected: this.isConnected,
-            ready: this.isReady(),
-            pbType: this.pb ? typeof this.pb : 'null',
-            hasCollection: this.pb ? typeof this.pb.collection : 'n/a'
-        };
-
-        // Add more detailed method availability
-        if (this.pb) {
-            status.availableMethods = {
-                collection: typeof this.pb.collection,
-                admins: typeof this.pb.admins,
-                authWithPassword: typeof this.pb.authWithPassword,
-                records: typeof this.pb.records
-            };
-
-            // If collection method exists, check what's available on a collection
-            if (this.pb.collection && typeof this.pb.collection === 'function') {
-                try {
-                    const userCollection = this.pb.collection('users');
-                    status.collectionMethods = {
-                        authWithPassword: typeof userCollection.authWithPassword,
-                        getFullList: typeof userCollection.getFullList,
-                        create: typeof userCollection.create
-                    };
-                } catch (e) {
-                    status.collectionError = e.message;
-                }
-            }
-        }
-
-        return status;
-    }
-
-    // Debug method to explore available authentication methods
-    debugAuthMethods() {
-        if (!this.pb) {
-            console.log('PocketBase not initialized');
-            return;
-        }
-
-        console.log('=== PocketBase Authentication Methods Debug ===');
-        console.log('PocketBase instance:', this.pb);
-        console.log('Available properties on pb:', Object.getOwnPropertyNames(this.pb));
-        
-        if (this.pb.users) {
-            console.log('Users object:', this.pb.users);
-            console.log('Users methods:', Object.getOwnPropertyNames(this.pb.users));
-            console.log('users.authViaEmail:', typeof this.pb.users.authViaEmail);
-            console.log('users.authWithPassword:', typeof this.pb.users.authWithPassword);
-        }
-
-        if (this.pb.admins) {
-            console.log('Admins object:', this.pb.admins);
-            console.log('Admins methods:', Object.getOwnPropertyNames(this.pb.admins));
-            console.log('admins.authViaEmail:', typeof this.pb.admins.authViaEmail);
-            console.log('admins.authWithPassword:', typeof this.pb.admins.authWithPassword);
-        }
-
-        if (this.pb.records) {
-            console.log('Records object:', this.pb.records);
-            console.log('Records methods:', Object.getOwnPropertyNames(this.pb.records));
-            console.log('records.authViaEmail:', typeof this.pb.records.authViaEmail);
-        }
-
-        console.log('AuthStore:', this.pb.authStore);
-        console.log('=== End Debug ===');
-    }
 }
 
-// Export singleton instance
 export const pocketBaseService = new PocketBaseService();

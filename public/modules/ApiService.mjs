@@ -11,11 +11,9 @@ export class ApiService {
 
     async initialize() {
         try {
-            // Load configuration
             const response = await fetch('/appsettings.json');
             this.config = await response.json();
-            
-            // Initialize PocketBase if enabled
+
             if (this.config.usingPocketBase && this.config.pocketBaseUrl) {
                 await pocketBaseService.initialize(this.config.pocketBaseUrl);
                 console.log('ApiService initialized with PocketBase');
@@ -39,6 +37,18 @@ export class ApiService {
         return this.config?.usingBackend === true;
     }
 
+    hasAuthentication() {
+        return this.isUsingPocketBase();
+    }
+
+    hasUserManagement() {
+        return this.isUsingPocketBase();
+    }
+
+    requiresAuthentication() {
+        return this.isUsingPocketBase();
+    }
+
     getBaseUrl() {
         if (this.isUsingPocketBase()) {
             return this.config.pocketBaseUrl;
@@ -48,14 +58,17 @@ export class ApiService {
         return '';
     }
 
-    // Expose PocketBase instance for advanced operations
     get pb() {
         return pocketBaseService.pb;
     }
 
-    // Authentication methods (only for admin)
     async login(email, password) {
-        this._ensureReady();
+        if (!this.isInitialized) {
+            throw new Error('ApiService not initialized');
+        }
+        if (!this.isUsingPocketBase()) {
+            throw new Error('Authentication is only available with PocketBase backend');
+        }
         return await pocketBaseService.login(email, password);
     }
 
@@ -69,7 +82,7 @@ export class ApiService {
         if (this.isUsingPocketBase()) {
             return pocketBaseService.isAuthenticated();
         }
-        return false; // Backend doesn't maintain auth state
+        return false;
     }
 
     isSuperuser() {
@@ -91,11 +104,14 @@ export class ApiService {
         if (!this.isInitialized) {
             throw new Error('ApiService not initialized');
         }
-        if (!this.isUsingPocketBase()) {
-            throw new Error('PocketBase not configured');
-        }
-        if (requireAuth && !this.isAuthenticated()) {
-            throw new Error('Authentication required');
+        
+        if (requireAuth) {
+            if (this.isUsingPocketBase()) {
+                if (!this.isAuthenticated()) {
+                    throw new Error('Authentication required');
+                }
+            }
+            // For backend, no auth required
         }
     }
 
@@ -114,7 +130,9 @@ export class ApiService {
     }
 
     async getAdminWords() {
-        this._ensureReady(true);
+        const requireAuth = this.isUsingPocketBase();
+        this._ensureReady(requireAuth);
+        
         if (this.isUsingPocketBase()) {
             return await pocketBaseService.getBingoFields('default');
         } else {
@@ -127,7 +145,9 @@ export class ApiService {
     }
 
     async saveWords(words) {
-        this._ensureReady(true);
+        const requireAuth = this.isUsingPocketBase();
+        this._ensureReady(requireAuth);
+        
         if (this.isUsingPocketBase()) {
             return await pocketBaseService.createOrUpdateBingoGrid('default', words);
         } else {
@@ -143,9 +163,11 @@ export class ApiService {
         }
     }
 
-    // User management methods
     async getUsers() {
         this._ensureReady(true);
+        if (!this.isUsingPocketBase()) {
+            throw new Error('User management is only available with PocketBase backend');
+        }
         return await this.pb.collection('users').getFullList({
             sort: '-created',
             requestKey: null
@@ -154,37 +176,29 @@ export class ApiService {
 
     async createUser(userData) {
         this._ensureReady(true);
+        if (!this.isUsingPocketBase()) {
+            throw new Error('User management is only available with PocketBase backend');
+        }
         return await this.pb.collection('users').create(userData);
     }
 
     async updateUser(userId, userData) {
         this._ensureReady(true);
+        if (!this.isUsingPocketBase()) {
+            throw new Error('User management is only available with PocketBase backend');
+        }
         return await this.pb.collection('users').update(userId, userData);
     }
 
     async deleteUser(userId) {
         this._ensureReady(true);
-        return await this.pb.collection('users').delete(userId);
-    }
-
-    // Test connection
-    async testConnection() {
-        this._ensureReady();
-        if (this.isUsingPocketBase()) {
-            return await pocketBaseService.testConnection();
-        } else {
-            try {
-                const response = await fetch('/api/words');
-                return { connected: response.ok };
-            } catch (error) {
-                return { connected: false, error: error.message };
-            }
+        if (!this.isUsingPocketBase()) {
+            throw new Error('User management is only available with PocketBase backend');
         }
+        return await this.pb.collection('users').delete(userId);
     }
 }
 
-// Export singleton instance
 export const apiService = new ApiService();
 
-// Also export as default for convenience
 export default apiService;

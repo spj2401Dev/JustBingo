@@ -104,17 +104,32 @@
     min-height: 100vh;
 }
 
-.admin-header {
-    background: white;
-    border-bottom: 1px solid #dee2e6;
-    padding: 20px;
+.admin-top-section {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: relative;
+    padding: 30px 20px 20px;
+    background-color: #f8f9fa;
 }
 
-.admin-header h1 {
+.logo-container {
+    width: 200px;
+    flex-shrink: 0;
+}
+
+.logo {
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.admin-title-container {
+    flex: 1;
+    text-align: center;
+}
+
+.admin-title-container h1 {
     margin: 0;
     font-family: 'Merriweather', serif;
     font-size: 2rem;
@@ -122,35 +137,119 @@
 }
 
 .user-info {
+    width: 200px;
     display: flex;
-    align-items: center;
-    gap: 15px;
+    justify-content: flex-end;
+    flex-shrink: 0;
 }
 
-.user-info span {
+.user-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.user-display-name {
     color: #666;
     font-weight: 500;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    user-select: none;
+}
+
+.user-display-name:hover {
+    background-color: #e9ecef;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: white;
+    min-width: 120px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    border-radius: 4px;
+    z-index: 1;
+    overflow: hidden;
+    border: 1px solid #dee2e6;
+    margin-top: 5px;
+}
+
+.user-dropdown.active .dropdown-content {
+    display: block;
 }
 
 .logout-btn {
     background-color: #dc3545;
     color: white;
     border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
+    padding: 10px 16px;
     cursor: pointer;
     font-size: 14px;
     transition: background-color 0.2s ease;
+    width: 100%;
+    text-align: left;
 }
 
 .logout-btn:hover {
     background-color: #c82333;
 }
 
+/* Mobile and Tablet Styles */
+@media (max-width: 768px) {
+    .admin-top-section {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .logo-container {
+        width: 150px;
+        margin-bottom: 15px;
+    }
+    
+    .admin-title-container h1 {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+    
+    .user-info {
+        width: auto;
+        justify-content: center;
+    }
+    
+    .user-dropdown {
+        position: relative;
+    }
+    
+    .dropdown-content {
+        left: 50%;
+        transform: translateX(-50%);
+        right: auto;
+    }
+}
+
+/* Tablet-specific adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .logo-container {
+        width: 150px;
+    }
+    
+    .admin-title-container h1 {
+        font-size: 1.8rem;
+    }
+    
+    .user-info {
+        width: 150px;
+    }
+}
+
 .admin-main {
     max-width: 800px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 20px;
 }
 
     .admin-main p {
@@ -208,10 +307,7 @@
     display: flex;
     align-items: center;
     margin-bottom: 10px;
-    background: white;
     border-radius: 6px;
-    padding: 5px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .word-field {
@@ -287,7 +383,7 @@
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-    .user-info {
+    .user-item .user-info {
         flex: 1;
     }
 
@@ -398,34 +494,4 @@
 .time-field:focus {
     outline: none;
     border-color: #007bff;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-    .login-container {
-        margin: 20px;
-        padding: 30px;
-    }
-    
-    .admin-header {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-    }
-    
-    .admin-main {
-        padding: 20px 15px;
-    }
-    
-    .word-field-container {
-        flex-direction: column;
-        gap: 5px;
-    }
-    
-    .word-field, .word-type, .time-field {
-        width: 100%;
-        max-width: none;
-        border-radius: 4px;
-        border: 1px solid #ced4da;
-    }
 }

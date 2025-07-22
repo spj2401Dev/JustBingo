@@ -1,11 +1,8 @@
-
 import { apiService } from './modules/ApiService.mjs';
-// You can also import like this if you prefer:
-// import pb from './modules/pocketbase.mjs';
+import CellFactory from './modules/fields/index.mjs';
 
 document.addEventListener("DOMContentLoaded", async () => {
     
-    // Initialize API service
     await apiService.initialize();
     
     const fetchWords = async () => {
@@ -22,78 +19,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         cell.classList.add('bingo-cell');
         cell.textContent = wordObj.word;
 
-        switch (wordObj.type) {
-            case 'Field':
-                createFieldCell(cell, wordObj);
-                break;
-            case 'Timer':
-                createFieldCell(cell, wordObj); // Not implemented yet
-                break;
-            case 'Free':
-                createFreeCell(cell, wordObj);
-                break;
-            default:
-                console.error(`Unknown word type: ${wordObj.type}`);
-        }
+        CellFactory.createCell(cell, wordObj, checkForBingo);
 
         return cell;
     };
 
-    var confettiColors = ['#42f569', '#23522d', '#05756a', '#6dd16d', '#0caae8']
-
-    const createFieldCell = (cell, wordObj) => {
-        cell.addEventListener('click', (event) => {
-            cell.classList.toggle('marked');
-            if (cell.classList.contains('marked')) {
-                showConfetti(event);
-                // Check for bingo after marking a cell
-                setTimeout(() => checkForBingo(), 100);
-            }
-        });
-
-        cell.addEventListener('contextmenu', (event) => {
-            event.preventDefault();
-            cell.classList.toggle('disabled');
-        });
-    };
-
-    const showConfetti = (event) => {
-        const x = event.clientX;
-        const y = event.clientY;
-
-        
-        confetti({
-            particleCount: 10,
-            spread: 60,
-            colors: confettiColors,
-            startVelocity: 20,
-            origin: {
-                x: x / window.innerWidth,
-                y: y / window.innerHeight 
-            }
-        });
-    };
-
-    const createFreeCell = (cell, wordObj) => {
-        cell.classList.add('free-cell');
-        cell.addEventListener('click', () => {
-            cell.classList.toggle('marked');
-            // Check for bingo after marking a cell
-            setTimeout(() => checkForBingo(), 100);
-        });
-    };
+    const confettiColors = ['#42f569', '#23522d', '#05756a', '#6dd16d', '#0caae8'];
 
     const checkForBingo = () => {
         const grid = document.getElementById('bingoGrid');
         const cells = Array.from(grid.children);
         
-        // Get marked cells that are not disabled
         const isMarked = (index) => {
             const cell = cells[index];
             return cell && cell.classList.contains('marked') && !cell.classList.contains('disabled');
         };
 
-        // Check all possible bingo patterns (rows, columns, diagonals)
         const bingoPatterns = [
             // Rows
             [0, 1, 2, 3, 4],
@@ -112,7 +53,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             [4, 8, 12, 16, 20]
         ];
 
-        // Count completed lines
         let completedLines = 0;
         for (const pattern of bingoPatterns) {
             if (pattern.every(index => isMarked(index))) {
@@ -120,14 +60,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        // Check for full house (all non-disabled cells marked)
         const totalCells = cells.length;
         const disabledCells = cells.filter(cell => cell.classList.contains('disabled')).length;
         const markedCells = cells.filter(cell => cell.classList.contains('marked') && !cell.classList.contains('disabled')).length;
         const requiredForFullHouse = totalCells - disabledCells;
         const isFullHouse = markedCells === requiredForFullHouse;
 
-        // Trigger appropriate celebration based on achievement
         if (isFullHouse && !grid.dataset.fullHouseTriggered) {
             triggerFullHouseCelebration();
             grid.dataset.fullHouseTriggered = 'true';
@@ -146,9 +84,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     const triggerOneLineCelebration = () => {
-        console.log('ONE LINE BINGO! 🎉');
-        
-        // Medium confetti burst
+        console.log('ONE LINE CELEBRATION TRIGGERED!');
         confetti({
             particleCount: 50,
             spread: 70,
@@ -161,9 +97,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     const triggerTwoLinesCelebration = () => {
-        console.log('TWO LINES BINGO! 🎉🎉');
-        
-        // Larger confetti burst
         confetti({
             particleCount: 100,
             spread: 90,
@@ -172,7 +105,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             origin: { x: 0.5, y: 0.6 }
         });
         
-        // Secondary burst
         setTimeout(() => {
             confetti({
                 particleCount: 50,
@@ -194,13 +126,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     const triggerFullHouseCelebration = () => {
-        fireworkConfetti();
+        confetti({
+            particleCount: 200,
+            spread: 120,
+            colors: confettiColors,
+            startVelocity: 45,
+            origin: { x: 0.5, y: 0.5 }
+        });
         
-        showBingoMessage('BINGO! 🏆🎉', '#42f569', '3.5rem');
+        setTimeout(() => {
+            confetti({
+                particleCount: 100,
+                spread: 80,
+                colors: confettiColors,
+                startVelocity: 35,
+                origin: { x: 0.2, y: 0.6 }
+            });
+            confetti({
+                particleCount: 100,
+                spread: 80,
+                colors: confettiColors,
+                startVelocity: 35,
+                origin: { x: 0.8, y: 0.6 }
+            });
+        }, 300);
+        
+        setTimeout(() => {
+            confetti({
+                particleCount: 150,
+                spread: 100,
+                colors: confettiColors,
+                startVelocity: 40,
+                origin: { x: 0.5, y: 0.3 }
+            });
+        }, 600);
+        
+        showBingoMessage('BINGO! Lingo! 🏆🎉', '#42f569', '3.5rem');
     };
 
     const showBingoMessage = (text, color = '#42f569', fontSize = '3rem') => {
-        // Create a temporary bingo message
+        console.log(`Showing bingo message: ${text}`);
         const message = document.createElement('div');
         message.textContent = text;
         message.style.cssText = `
@@ -219,7 +184,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             text-align: center;
         `;
         
-        // Add CSS animation if not already added
         if (!document.getElementById('bingo-styles')) {
             const style = document.createElement('style');
             style.id = 'bingo-styles';
@@ -236,7 +200,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         document.body.appendChild(message);
         
-        // Remove message after animation
         setTimeout(() => {
             if (message.parentNode) {
                 message.parentNode.removeChild(message);
@@ -274,56 +237,3 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     initializeBingoGrid();
 });
-
-// unessesary code
-
-var allowedKeys = {
-    37: 'left',
-    38: 'up',
-    39: 'right',
-    40: 'down',
-    65: 'a',
-    66: 'b'
-};
-  
-var konamiCode = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b', 'a'];
-var konamiCodePosition = 0;
-  
-document.addEventListener('keydown', function(e) {
-    var key = allowedKeys[e.keyCode];
-    var requiredKey = konamiCode[konamiCodePosition];
-  
-    if (key == requiredKey) {
-        konamiCodePosition++;
-        if (konamiCodePosition == konamiCode.length) {
-            fireworkConfetti()
-            konamiCodePosition = 0;
-        }   
-    } else {
-      konamiCodePosition = 0;
-    }
-});
-
-function fireworkConfetti() {
-    var confettiColors = ['#42f569', '#23522d', '#05756a', '#6dd16d', '#0caae8']
-    var duration = 15 * 1000;
-    var animationEnd = Date.now() + duration;
-    var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0, colors: confettiColors };
-
-    function randomInRange(min, max) {
-        return Math.random() * (max - min) + min;
-    }
-
-    var interval = setInterval(function() {
-    var timeLeft = animationEnd - Date.now();
-
-    if (timeLeft <= 0) {
-        return clearInterval(interval);
-    }
-
-    var particleCount = 50 * (timeLeft / duration);
-
-    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-    confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-    }, 250);
-}

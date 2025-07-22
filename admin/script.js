@@ -1,9 +1,33 @@
 import { apiService } from '../modules/ApiService.mjs';
+import { WordFieldManager } from './modules/fields/index.mjs';
+
+class FeatureManager {
+    constructor(apiService) {
+        this.apiService = apiService;
+    }
+
+    hasAuthentication() {
+        return this.apiService.isUsingPocketBase();
+    }
+
+    hasUserManagement() {
+        return this.apiService.isUsingPocketBase();
+    }
+
+    requiresLogin() {
+        return this.apiService.isUsingPocketBase();
+    }
+
+    hasLogout() {
+        return this.apiService.isUsingPocketBase();
+    }
+}
 
 class AdminApp {
     constructor() {
         this.isAuthenticated = false;
         this.wordsContainer = null;
+        this.wordFieldManager = null;
         this.saveButton = null;
         this.addWordButton = null;
         this.exportButton = null;
@@ -11,18 +35,19 @@ class AdminApp {
         this.fileInput = null;
         this.currentTab = 'words';
         this.userManagementSetup = false;
+        this.featureManager = null;
     }
 
     async initialize() {
         try {
-            // Initialize API service
             await apiService.initialize();
+            this.featureManager = new FeatureManager(apiService);
             
-            // Check if we need authentication (only for PocketBase)
-            if (apiService.isUsingPocketBase()) {
+            this.setupUIBasedOnFeatures();
+            
+            if (this.featureManager.requiresLogin()) {
                 await this.handleAuthentication();
             } else {
-                // For backend, show admin interface directly (basic auth handled by server)
                 this.showAdminInterface();
                 await this.initializeAdminInterface();
             }
@@ -32,37 +57,75 @@ class AdminApp {
         }
     }
 
-    async handleAuthentication() {
+    setupUIBasedOnFeatures() {
         const loginScreen = document.getElementById('login-screen');
         const adminInterface = document.getElementById('admin-interface');
         
-        // Check if already authenticated
+        if (!this.featureManager.hasAuthentication()) {
+            loginScreen.style.display = 'none';
+        }
+
+        const logoutBtn = document.getElementById('logout-btn');
+        const userInfo = document.querySelector('.user-info');
+        if (!this.featureManager.hasLogout()) {
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (userInfo) {
+                // Keep dropdown structure but hide logout button
+                userInfo.innerHTML = `
+                    <div class="user-dropdown">
+                        <span id="user-display" class="user-display-name">Admin User</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Hide/show user management tab
+        const usersTab = document.getElementById('users-tab');
+        if (this.featureManager.hasUserManagement()) {
+            usersTab.style.display = 'block';
+        } else {
+            usersTab.style.display = 'none';
+        }
+    }
+
+    async handleAuthentication() {
+        if (!this.featureManager.hasAuthentication()) {
+            this.showAdminInterface();
+            await this.initializeAdminInterface();
+            return;
+        }
+
+        const loginScreen = document.getElementById('login-screen');
+        const adminInterface = document.getElementById('admin-interface');
+        
         if (apiService.isAuthenticated()) {
             this.showAdminInterface();
             await this.initializeAdminInterface();
             return;
         }
 
-        // Show login screen
         loginScreen.style.display = 'flex';
         adminInterface.style.display = 'none';
 
-        // Setup login handlers
         this.setupLoginHandlers();
     }
 
     setupLoginHandlers() {
+        if (!this.featureManager.hasAuthentication()) {
+            return;
+        }
+
         const loginForm = document.getElementById('login-form');
         const logoutBtn = document.getElementById('logout-btn');
 
-        // Email/Password login
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await this.handleEmailLogin();
-        });
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await this.handleEmailLogin();
+            });
+        }
 
-        // Logout
-        if (logoutBtn) {
+        if (logoutBtn && this.featureManager.hasLogout()) {
             logoutBtn.addEventListener('click', () => {
                 this.handleLogout();
             });
@@ -70,23 +133,33 @@ class AdminApp {
     }
 
     async handleEmailLogin() {
+        if (!this.featureManager.hasAuthentication()) {
+            return;
+        }
+
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const errorDiv = document.getElementById('login-error');
 
         try {
-            errorDiv.style.display = 'none';
+            if (errorDiv) errorDiv.style.display = 'none';
             await apiService.login(email, password);
             this.showAdminInterface();
             await this.initializeAdminInterface();
         } catch (error) {
             console.error('Login failed:', error);
-            errorDiv.textContent = error.message;
-            errorDiv.style.display = 'block';
+            if (errorDiv) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
         }
     }
 
     handleLogout() {
+        if (!this.featureManager.hasLogout()) {
+            return;
+        }
+
         apiService.logout();
         document.getElementById('login-screen').style.display = 'flex';
         document.getElementById('admin-interface').style.display = 'none';
@@ -96,40 +169,40 @@ class AdminApp {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('admin-interface').style.display = 'block';
         
-        // Update user display
         const userDisplay = document.getElementById('user-display');
-        const currentUser = apiService.getCurrentUser();
-        if (currentUser) {
-            userDisplay.textContent = currentUser.email || currentUser.username || 'Admin User';
+        if (this.featureManager.hasAuthentication()) {
+            const currentUser = apiService.getCurrentUser();
+            if (currentUser && userDisplay) {
+                userDisplay.textContent = currentUser.email || currentUser.username || 'Admin User';
+            }
         } else {
-            userDisplay.textContent = 'Admin User';
+            if (userDisplay) {
+                userDisplay.textContent = 'Admin User';
+            }
         }
         
         this.isAuthenticated = true;
     }
 
     async initializeAdminInterface() {
-        // Get DOM elements
         this.wordsContainer = document.getElementById('words-container');
+        this.wordFieldManager = new WordFieldManager(this.wordsContainer);
         this.saveButton = document.getElementById('save-button');
         this.addWordButton = document.getElementById('add-word-button');
         this.exportButton = document.getElementById('export-button');
         this.importButton = document.getElementById('import-button');
         this.fileInput = document.getElementById('file-input');
 
-        // Setup event listeners
         this.setupAdminEventListeners();
         
-        // Setup tabs
         this.setupTabs();
 
-        // Load existing words
         try {
             const words = await apiService.getAdminWords();
             if (words.length === 0) {
-                this.displayNoWordsMessage();
+                this.wordFieldManager.displayNoWordsMessage();
             } else {
-                words.forEach(wordObj => this.addWordField(wordObj.word, wordObj.type, wordObj.time));
+                words.forEach(wordObj => this.wordFieldManager.addField(wordObj.word, wordObj.type, wordObj.time));
             }
         } catch (error) {
             this.handleFetchError(error);
@@ -137,34 +210,58 @@ class AdminApp {
     }
 
     setupAdminEventListeners() {
-        // Add word button
-        this.addWordButton.addEventListener('click', () => this.addWordField());
+        this.addWordButton.addEventListener('click', () => this.wordFieldManager.addField());
 
-        // Save button
         this.saveButton.addEventListener('click', async () => {
             await this.saveWords();
         });
 
-        // Export button
         this.exportButton.addEventListener('click', () => {
             this.exportWords();
         });
 
-        // Import button
         this.importButton.addEventListener('click', () => {
             this.fileInput.click();
         });
 
-        // File input
         this.fileInput.addEventListener('change', async () => {
             await this.importWords();
         });
 
-        // Logout button
         const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
+        if (logoutBtn && this.featureManager.hasLogout()) {
             logoutBtn.addEventListener('click', () => {
                 this.handleLogout();
+            });
+        }
+
+        // Setup user dropdown functionality
+        this.setupUserDropdown();
+    }
+
+    setupUserDropdown() {
+        const userDisplay = document.getElementById('user-display');
+        const userDropdown = document.querySelector('.user-dropdown');
+
+        if (userDisplay && userDropdown) {
+            // Toggle dropdown on click
+            userDisplay.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('active');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!userDropdown.contains(e.target)) {
+                    userDropdown.classList.remove('active');
+                }
+            });
+
+            // Close dropdown when pressing escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    userDropdown.classList.remove('active');
+                }
             });
         }
     }
@@ -175,69 +272,11 @@ class AdminApp {
 
     handleFetchError(error) {
         console.error('Error fetching words:', error);
-        this.wordsContainer.innerHTML = '<p>Error loading words. Please try again later.</p>';
-    }
-
-    addWordField(value = '', type = 'Field', time = '') {
-        const container = document.createElement('div');
-        container.className = 'word-field-container';
-
-        const timeInput = document.createElement('input');
-        timeInput.type = 'number';
-        timeInput.placeholder = 'Sec';
-        timeInput.className = 'time-field';
-        timeInput.value = time;
-
-        const inputField = document.createElement('input');
-        inputField.type = 'text';
-        inputField.value = value;
-        inputField.className = 'word-field';
-
-        const typeDropdown = document.createElement('select');
-        const options = ['Field', 'Free', 'Timer'];
-        options.forEach(option => {
-            const opt = document.createElement('option');
-            opt.value = option;
-            opt.textContent = option;
-            if (option === type) opt.selected = true;
-            typeDropdown.appendChild(opt);
-        });
-
-        typeDropdown.className = 'word-type';
-
-        typeDropdown.addEventListener('change', () => {
-            if (typeDropdown.value === 'Timer') {
-                timeInput.style.display = 'block';
-            } else {
-                timeInput.style.display = 'none';
-            }
-        });
-
-        // Set initial visibility based on type
-        timeInput.style.display = type === 'Timer' ? 'block' : 'none';
-
-        const removeButton = document.createElement('button');
-        removeButton.textContent = 'X';
-        removeButton.className = 'remove-button';
-        removeButton.addEventListener('click', () => {
-            container.remove();
-        });
-
-        container.appendChild(timeInput);
-        container.appendChild(inputField);
-        container.appendChild(typeDropdown);
-        container.appendChild(removeButton);
-        this.wordsContainer.appendChild(container);
+        this.wordFieldManager.displayErrorMessage();
     }
 
     async saveWords() {
-        const updatedWords = Array.from(document.querySelectorAll('.word-field-container')).map(container => {
-            return {
-                word: container.querySelector('.word-field').value,
-                type: container.querySelector('.word-type').value,
-                time: container.querySelector('.time-field').style.display === 'block' ? container.querySelector('.time-field').value : null
-            };
-        });
+        const updatedWords = this.wordFieldManager.getAllValues();
 
         try {
             await apiService.saveWords(updatedWords);
@@ -260,13 +299,7 @@ class AdminApp {
     }
 
     exportWords() {
-        const words = Array.from(document.querySelectorAll('.word-field-container')).map(container => {
-            return {
-                word: container.querySelector('.word-field').value,
-                type: container.querySelector('.word-type').value,
-                time: container.querySelector('.time-field').style.display === 'block' ? container.querySelector('.time-field').value : null
-            };
-        });
+        const words = this.wordFieldManager.getAllValues();
 
         const blob = new Blob([JSON.stringify({ words }, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -285,8 +318,8 @@ class AdminApp {
                 const json = JSON.parse(content);
 
                 if (this.isValidWordData(json)) {
-                    this.wordsContainer.innerHTML = '';
-                    json.words.forEach(wordObj => this.addWordField(wordObj.word, wordObj.type, wordObj.time));
+                    this.wordFieldManager.clearAllFields();
+                    json.words.forEach(wordObj => this.wordFieldManager.addField(wordObj.word, wordObj.type, wordObj.time));
                 } else {
                     alert('Invalid JSON format. Please provide a valid words file.');
                 }
@@ -319,21 +352,23 @@ class AdminApp {
     setupTabs() {
         const wordsTab = document.getElementById('words-tab');
         const usersTab = document.getElementById('users-tab');
-        const wordsSection = document.getElementById('words-section');
-        const usersSection = document.getElementById('users-section');
 
-        // Show users tab only for PocketBase
-        if (apiService.isUsingPocketBase()) {
+        // Show/hide user management tab based on features
+        if (this.featureManager.hasUserManagement()) {
             usersTab.style.display = 'block';
+        } else {
+            usersTab.style.display = 'none';
         }
 
         wordsTab.addEventListener('click', () => {
             this.switchTab('words');
         });
 
-        usersTab.addEventListener('click', () => {
-            this.switchTab('users');
-        });
+        if (this.featureManager.hasUserManagement()) {
+            usersTab.addEventListener('click', () => {
+                this.switchTab('users');
+            });
+        }
     }
 
     switchTab(tab) {
@@ -342,24 +377,19 @@ class AdminApp {
         const wordsSection = document.getElementById('words-section');
         const usersSection = document.getElementById('users-section');
 
-        // Update active tab
         wordsTab.classList.toggle('active', tab === 'words');
         usersTab.classList.toggle('active', tab === 'users');
 
-        // Update visible section
         wordsSection.classList.toggle('active', tab === 'words');
         usersSection.classList.toggle('active', tab === 'users');
 
         this.currentTab = tab;
 
-        // Load users if switching to users tab
-        if (tab === 'users' && apiService.isUsingPocketBase()) {
-            // Set up user management event listeners first
+        if (tab === 'users' && this.featureManager.hasUserManagement()) {
             if (!this.userManagementSetup) {
                 this.setupUserManagement();
                 this.userManagementSetup = true;
             }
-            // Then load the users
             this.loadUsers();
         }
     }
@@ -390,7 +420,7 @@ class AdminApp {
     }
 
     async loadUsers() {
-        if (!apiService.isUsingPocketBase()) return;
+        if (!this.featureManager.hasUserManagement()) return;
 
         try {
             const users = await apiService.getUsers();
@@ -437,7 +467,6 @@ class AdminApp {
         const form = document.getElementById('add-user-form');
         form.style.display = 'block';
         
-        // Clear form fields
         document.getElementById('new-user-email').value = '';
         document.getElementById('new-user-name').value = '';
         document.getElementById('new-user-password').value = '';
@@ -471,7 +500,6 @@ class AdminApp {
         }
 
         try {
-            // Create user with clean data structure
             const userData = {
                 email,
                 password,
@@ -479,7 +507,6 @@ class AdminApp {
                 emailVisibility: true
             };
 
-            // Add name only if provided
             if (name && name.trim()) {
                 userData.name = name.trim();
             }
@@ -488,7 +515,6 @@ class AdminApp {
             const newUser = await apiService.createUser(userData);
             console.log('User created successfully:', newUser.id);
 
-            // Try to verify user if we're a superuser
             if (apiService.isSuperuser()) {
                 try {
                     await apiService.updateUser(newUser.id, { verified: true });
@@ -534,12 +560,10 @@ class AdminApp {
 
     showSuccess(message) {
         console.log(message);
-        // Could show a toast here
         alert(message);
     }
 }
 
-// Initialize the admin app when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
     window.adminApp = new AdminApp();
     await window.adminApp.initialize();
