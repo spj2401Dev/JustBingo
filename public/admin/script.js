@@ -70,7 +70,6 @@ class AdminApp {
         if (!this.featureManager.hasLogout()) {
             if (logoutBtn) logoutBtn.style.display = 'none';
             if (userInfo) {
-                // Keep dropdown structure but hide logout button
                 userInfo.innerHTML = `
                     <div class="user-dropdown">
                         <span id="user-display" class="user-display-name">Admin User</span>
@@ -79,7 +78,6 @@ class AdminApp {
             }
         }
 
-        // Hide/show user management tab
         const usersTab = document.getElementById('users-tab');
         if (this.featureManager.hasUserManagement()) {
             usersTab.style.display = 'block';
@@ -235,7 +233,6 @@ class AdminApp {
             });
         }
 
-        // Setup user dropdown functionality
         this.setupUserDropdown();
     }
 
@@ -244,20 +241,17 @@ class AdminApp {
         const userDropdown = document.querySelector('.user-dropdown');
 
         if (userDisplay && userDropdown) {
-            // Toggle dropdown on click
             userDisplay.addEventListener('click', (e) => {
                 e.stopPropagation();
                 userDropdown.classList.toggle('active');
             });
 
-            // Close dropdown when clicking outside
             document.addEventListener('click', (e) => {
                 if (!userDropdown.contains(e.target)) {
                     userDropdown.classList.remove('active');
                 }
             });
 
-            // Close dropdown when pressing escape
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     userDropdown.classList.remove('active');
@@ -353,7 +347,6 @@ class AdminApp {
         const wordsTab = document.getElementById('words-tab');
         const usersTab = document.getElementById('users-tab');
 
-        // Show/hide user management tab based on features
         if (this.featureManager.hasUserManagement()) {
             usersTab.style.display = 'block';
         } else {
@@ -400,7 +393,7 @@ class AdminApp {
         const createUserButton = document.getElementById('create-user-button');
         const cancelUserButton = document.getElementById('cancel-user-button');
 
-        if (!addUserButton) return; // Elements might not exist yet
+        if (!addUserButton) return;
 
         addUserButton.addEventListener('click', () => {
             this.showAddUserForm();

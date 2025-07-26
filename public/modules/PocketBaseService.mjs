@@ -128,16 +128,18 @@ export class PocketBaseService {
 
         try {
             let grid = await this.getBingoGrid(gridName);
-            
+
             if (grid) {
-                console.log('Grid exists, deleting existing fields first');
-                
+                console.log('Grid exists, deleting existing fields in batch');
                 const existingFields = await this.pb.collection('bingoFields').getFullList({
                     filter: `bingoGrid="${grid.id}"`
                 });
-                
-                for (const field of existingFields) {
-                    await this.pb.collection('bingoFields').delete(field.id);
+                if (existingFields.length > 0) {
+                    const deleteBatch = this.pb.createBatch();
+                    for (const field of existingFields) {
+                        deleteBatch.collection('bingoFields').delete(field.id);
+                    }
+                    await deleteBatch.send();
                 }
             } else {
                 console.log('Creating new grid');
@@ -149,7 +151,6 @@ export class PocketBaseService {
             if (fields && fields.length > 0) {
                 console.log('Creating fields in batch for grid:', grid.id);
                 const batch = this.pb.createBatch();
-                
                 for (const field of fields) {
                     const fieldData = {
                         text: field.word,
@@ -159,7 +160,6 @@ export class PocketBaseService {
                     };
                     batch.collection('bingoFields').create(fieldData);
                 }
-
                 await batch.send();
             }
 
