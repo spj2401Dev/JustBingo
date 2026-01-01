@@ -17,10 +17,10 @@
   "license": "MIT",
   "dependencies": {
     "basic-auth": "^2.0.1",
-    "body-parser": "^1.20.2",
+    "body-parser": "^1.20.4",
     "dotenv": "^16.4.7",
     "edit-json-file": "^1.8.1",
-    "express": "^4.21.2"
+    "express": "^4.22.1"
   },
   "devDependencies": {
     "http-server": "^14.1.1",
